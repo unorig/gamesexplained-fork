@@ -96,7 +96,7 @@ villain needs the base", "how the game picks a walking frame". Then:
 
 ### Links
 
-A page has three kinds of link, and each looks different so the reader
+A page has four kinds of link, and each looks different so the reader
 knows where it goes before clicking.
 
 - **Inside the site.** A plain link on the words, to the section that
@@ -112,6 +112,13 @@ knows where it goes before clicking.
   also where a fact came from, it is a source: give it a footnote and do
   not also link it in the sentence. A fact a reader can look up is better
   as a footnote than as a link out.
+- **Places on the map.** When a sentence or a table row names a place or
+  an object the Maps tab shows, put a small map-pin icon beside it that
+  opens the map centred on that spot (`levels.html?go=<mark>#<section>`),
+  rather than a word link or a coordinate the reader has to find. The
+  icon carries a `title` and `aria-label` such as "Show the CRYSTAL on the
+  map". Doctor Who and the Mines of Terror is the example: its pages
+  write `map` as the link text and `reference/dw-page.js` swaps in the pin.
 
 The test is a human reading the page without noticing how it was made.
 
