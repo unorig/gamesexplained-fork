@@ -121,6 +121,9 @@ knows where it goes before clicking.
   write `map` as the link text and `reference/dw-page.js` swaps in the pin.
   Do not describe where a thing is ("halfway up on the left", "near the
   top right corner"): put the pin beside its name and let the map show it.
+  A pin does not replace a link, and a link does not replace a pin: a
+  thing that is both explained somewhere and shown on the map gets both,
+  the link on its name to learn more and the pin beside it to jump to it.
 
 - **Code.** An address or a routine's name in `<code>` is a link to that
   line on the Source tab. site.js makes the link for `$XXXX` and for any
