@@ -367,3 +367,7 @@ details.factsbox summary{cursor:pointer;font-family:var(--fb);font-size:14px;col
 /* a part laid over the listing beneath it: its own rows carry a bar, and its names an accent */
 .src .row.mine{box-shadow:inset 2px 0 0 var(--accent)}
 .src .idx a.mine .a{color:var(--accent)}
+
+/* External links (kit/style.md, "Links"): a small boxed arrow tells the reader the link leaves the site.
+   Footnote markers and image links are left plain. */
+main a[href^="http"]:not(sup.fn a):not(:has(img))::after{content:"\2197";display:inline-block;font-size:.65em;line-height:1;margin-left:.2em;padding:.1em .2em;border:1px solid currentColor;border-radius:3px;vertical-align:.2em;opacity:.75}

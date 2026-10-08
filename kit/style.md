@@ -94,6 +94,24 @@ villain needs the base", "how the game picks a walking frame". Then:
   and its tab list are a map of the site, so each thing they name links
   to the section that explains it.
 
+### Links
+
+A page has three kinds of link, and each looks different so the reader
+knows where it goes before clicking.
+
+- **Inside the site.** A plain link on the words, to the section that
+  explains them (see the rule above). Link to the section, not just the tab.
+- **Sources.** Where the page learnt a fact, cite it with a footnote
+  marker that points to the numbered list on About, never a link in the
+  sentence. The footnote's title names the source.
+- **Other sites.** A link to a page outside the site that a reader may
+  want to visit: a person's interview, a company's history, another
+  archive. Use it on the words it is about, sparingly. site.css marks
+  every such link with a small boxed arrow, so the reader knows it leaves
+  the site; do not add the mark by hand. When a page outside the site is
+  also where a fact came from, it is a source first: give it a footnote,
+  and link it in the sentence only if the reader would want to go there.
+
 The test is a human reading the page without noticing how it was made.
 
 ### Section headings
