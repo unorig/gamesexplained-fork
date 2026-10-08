@@ -109,8 +109,9 @@ knows where it goes before clicking.
   archive. Use it on the words it is about, sparingly. site.css marks
   every such link with a small boxed arrow, so the reader knows it leaves
   the site; do not add the mark by hand. When a page outside the site is
-  also where a fact came from, it is a source first: give it a footnote,
-  and link it in the sentence only if the reader would want to go there.
+  also where a fact came from, it is a source: give it a footnote and do
+  not also link it in the sentence. A fact a reader can look up is better
+  as a footnote than as a link out.
 
 The test is a human reading the page without noticing how it was made.
 
