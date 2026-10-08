@@ -85,6 +85,14 @@ villain needs the base", "how the game picks a walking frame". Then:
   the picture is made). A paragraph whose purpose belongs to another tab
   moves there and leaves a link behind, however well it reads where it is.
   The same holds one level down: a paragraph serves its section's heading.
+- Link what the page names to where it is explained. When a sentence
+  mentions something another tab or section covers in depth (an object,
+  a step of the solution, a routine, a map area), link those words to
+  that section, not just to the tab. The reader can then dip into the
+  detail from wherever they are, and the sentence stays short because the
+  explanation lives in one place. The Overview most of all: its story
+  and its tab list are a map of the site, so each thing they name links
+  to the section that explains it.
 
 The test is a human reading the page without noticing how it was made.
 
