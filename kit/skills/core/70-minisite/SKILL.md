@@ -538,6 +538,18 @@ is what the tab is about, such as Fighters or Ships. The file is
 nothing drawn moves (a text adventure, a board of fixed squares), and
 say why in `agent-history.md`.
 
+## Animated sprites, when the steward wants them
+
+A creature or object that animates in the game can be shown animating on
+the page: its frames drawn in turn from the game's own frame table, at the
+game's pace. A small download icon on the picture can then save the
+animation as a looping GIF, written in the page from the same frames
+(the C64's palette as the colour table, one image per frame). Both are
+optional. During the Gold pass, ask the steward whether they want
+animated sprites, and the GIF download, before adding either; never add
+them on a Silver run unasked. Keep the icon unobtrusive: faint in a
+corner of the picture until the reader points at it.
+
 ## Play
 
 A behavioural port of the full game in JavaScript, built from the
