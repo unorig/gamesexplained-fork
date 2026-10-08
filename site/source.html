@@ -199,7 +199,10 @@
     const id=(location.hash||'').slice(1).toUpperCase(); if(!id) return;
     let el=document.getElementById(id), note='';
     if(!el){
-      if(!/^[0-9A-F]{4}$/.test(id)) return;
+      if(!/^[0-9A-F]{4}$/.test(id)){                        // a routine's or table's name: go to its address
+        for(const [a,l] of names) if(l.toUpperCase()===id){ location.replace('#'+id4(a)); return; }
+        return;
+      }
       const a=parseInt(id,16);
       if(first.has(a)){ want=first.get(a); return; }              // its row is not rendered yet: slice() calls back
       let lo=0,hi=held.length-1,best=-1;

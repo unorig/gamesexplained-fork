@@ -96,7 +96,7 @@ villain needs the base", "how the game picks a walking frame". Then:
 
 ### Links
 
-A page has four kinds of link, and each looks different so the reader
+A page has five kinds of link, and each looks different so the reader
 knows where it goes before clicking.
 
 - **Inside the site.** A plain link on the words, to the section that
@@ -121,6 +121,12 @@ knows where it goes before clicking.
   write `map` as the link text and `reference/dw-page.js` swaps in the pin.
   Do not describe where a thing is ("halfway up on the left", "near the
   top right corner"): put the pin beside its name and let the map show it.
+
+- **Code.** An address or a routine's name in `<code>` is a link to that
+  line on the Source tab. site.js makes the link for `$XXXX` and for any
+  name written exactly as the symbol map spells it (`controller_touch`),
+  so write the name or address in `<code>`, never in plain text, and
+  never a name the symbol map does not have.
 
 Links are the easiest thing to leave out. Before a page is done, read it
 once for nothing else: every object, creature, place, routine, and

@@ -1,4 +1,4 @@
-// Shared behaviour: mark the active tab, and turn $XXXX inside <code> into links to the Source tab.
+// Shared behaviour: mark the active tab, and turn $XXXX or a symbol's name inside <code> into links to the Source tab.
 // In a game of several parts an address belongs to one of them: an element's data-part="<id>" sends
 // the addresses inside it to that part's Source page, and data-part="" links none of them.
 (function(){
@@ -143,10 +143,12 @@
   document.querySelectorAll('code').forEach(function(c){
     if(c.closest('a')||c.closest('pre')||c.children.length) return;
     var t=c.textContent, m=/^\$([0-9A-Fa-f]{4})$/.exec(t.trim());
+    /* a symbol's name, such as controller_touch: the Source tab finds its address */
+    if(!m&&/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(t.trim())) m=[t,t.trim()];
     if(!m) return;
     var d=c.closest('[data-part]'), page=d?(d.dataset.part?'source-'+d.dataset.part+'.html':''):'source.html';
     if(!page) return;
-    var a=document.createElement('a'); a.href=page+'#'+m[1].toUpperCase(); a.textContent=t;
+    var a=document.createElement('a'); a.href=page+'#'+(/^[0-9A-Fa-f]{4}$/.test(m[1])?m[1].toUpperCase():m[1]); a.textContent=t;
     a.dataset.auto='';   /* not in the source: the page editor leaves it out of what it saves */
     c.textContent=''; c.appendChild(a);
   });
