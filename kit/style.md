@@ -119,6 +119,14 @@ knows where it goes before clicking.
   icon carries a `title` and `aria-label` such as "Show the CRYSTAL on the
   map". Doctor Who and the Mines of Terror is the example: its pages
   write `map` as the link text and `reference/dw-page.js` swaps in the pin.
+  Do not describe where a thing is ("halfway up on the left", "near the
+  top right corner"): put the pin beside its name and let the map show it.
+
+Links are the easiest thing to leave out. Before a page is done, read it
+once for nothing else: every object, creature, place, routine, and
+mechanic it names, in prose and in tables, either links to where it is
+explained, carries a pin, or is explained right there. A table cell is
+not exempt.
 
 The test is a human reading the page without noticing how it was made.
 
