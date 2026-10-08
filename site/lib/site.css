@@ -676,3 +676,7 @@ html:has(.pagenav) h2[id]{scroll-margin-top:calc(var(--tabs-h,48px) + 16px)}
   .checking .finds>span:nth-child(3),.checking .finds>span:nth-child(4){display:none}
 }
 @media (prefers-reduced-motion:no-preference){.checking .axis .range,.checking .axis .dot,.checking .finds .track i{transition:all .2s ease}}
+
+/* External links (kit/style.md, "Links"): a small boxed arrow tells the reader the link leaves the site.
+   Footnote markers and image links are left plain. */
+main a[href^="http"]:not(sup.fn a):not(:has(img))::after{content:"\2197";display:inline-block;font-size:.65em;line-height:1;margin-left:.2em;padding:.1em .2em;border:1px solid currentColor;border-radius:3px;vertical-align:.2em;opacity:.75}
