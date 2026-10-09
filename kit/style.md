@@ -112,27 +112,11 @@ knows where it goes before clicking.
   also where a fact came from, it is a source: give it a footnote and do
   not also link it in the sentence. A fact a reader can look up is better
   as a footnote than as a link out.
-- **Places on the map.** When a sentence or a table row names a place or
-  an object the Maps tab shows, put a small map-pin icon beside it that
-  opens the map centred on that spot (`levels.html?go=<mark>#<section>`),
-  rather than a word link or a coordinate the reader has to find. The
-  icon carries a `title` and `aria-label` such as "Show the CRYSTAL on the
-  map". Doctor Who and the Mines of Terror is the example: its pages
-  write `map` as the link text and `reference/dw-page.js` swaps in the pin.
-  Do not describe where a thing is ("halfway up on the left", "near the
-  top right corner"): put the pin beside its name and let the map show it.
-
 - **Code.** An address or a routine's name in `<code>` is a link to that
   line on the Source tab. site.js makes the link for `$XXXX` and for any
   name written exactly as the symbol map spells it (`controller_touch`),
   so write the name or address in `<code>`, never in plain text, and
   never a name the symbol map does not have.
-
-Links are the easiest thing to leave out. Before a page is done, read it
-once for nothing else: every object, creature, place, routine, and
-mechanic it names, in prose and in tables, either links to where it is
-explained, carries a pin, or is explained right there. A table cell is
-not exempt.
 
 The test is a human reading the page without noticing how it was made.
 
