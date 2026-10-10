@@ -307,7 +307,10 @@
     wkBack.disabled = i === 0; wkNext.textContent = i + 1 === STEPS.length ? 'Start again' : 'Next';
     cancelAnimationFrame(wkAnim);
     // forward, the icon follows the step's waypoints (a ladder, say); back, it goes straight
-    const path = [from, ...((STEPS[i].via && fwd) ? STEPS[i].via : []), to];
+    const raw = [from, ...((STEPS[i].via && fwd) ? STEPS[i].via : []), to];
+    // drop points a few pixels from the last one kept: the route snaps to the character grid, so the
+    // spot an object is drawn at and the end of the route beside it can differ, and the icon would hop back
+    const path = raw.filter((p, j) => j === 0 || j === raw.length - 1 || Math.hypot(p[0] - raw[j - 1][0], p[1] - raw[j - 1][1]) > 12 && Math.hypot(p[0] - raw[raw.length - 1][0], p[1] - raw[raw.length - 1][1]) > 12);
     wkPath = path.length > 2 ? path : null;
     const segs = path.slice(1).map((p, j) => Math.hypot(p[0] - path[j][0], p[1] - path[j][1])), len = segs.reduce((a, b) => a + b, 0) || 1;
     // a steady walking pace: a long leg takes longer, rather than racing past
