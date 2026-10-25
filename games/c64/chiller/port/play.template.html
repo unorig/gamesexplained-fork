@@ -110,6 +110,12 @@ th{font-weight:700;color:var(--ink-soft)}
 .pl-panel{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
 .pl-panel[hidden]{display:none}
 .pl-panel h3{margin:0 0 6px;font-size:17px}
+.pl-board-name{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.pl-board-name input{font:inherit;padding:2px 6px;width:12em}
+.pl-board-list{margin:0 0 8px;padding-left:1.6em;font-variant-numeric:tabular-nums}
+.pl-board-list li{padding:2px 0}
+.pl-board-list li.me{font-weight:700}
+.pl-board-list button{font:inherit;font-size:12px;margin-left:8px;padding:0 6px}
 .pl-under{margin-top:12px;border-top:none;padding-top:0}
 .pl-mem{display:block;width:100%;height:auto;image-rendering:pixelated;border-radius:6px;border:1px solid var(--line);cursor:crosshair;background:#000}
 .pl-mem-tip{font-family:var(--fm);font-size:12px;color:var(--ink-soft);min-height:1.6em;margin-top:6px}
@@ -150,6 +156,12 @@ section table{margin:6px 0 18px}
       <h3>The sound chip's three voices</h3>
       <div class="pl-voices" id="pl-voice-rows"></div>
       <p class="cap">Each bar is a voice's loudness, worked out from the attack, decay, sustain, and release the game sets; the mark is its sustain level. The note is the voice's frequency register on a PAL machine. The tune plays on voices 1 and 2; the game's sound effects use voice 3.</p>
+    </div>
+    <div class="pl-panel pl-under" id="pl-board" hidden>
+      <h3>Leaderboard: <span id="pl-board-screen">this screen</span></h3>
+      <form class="pl-board-name" id="pl-board-form"><label>Your name on the board <input id="pl-board-name" maxlength="16" autocomplete="nickname" placeholder="3 to 16 letters"></label> <button type="submit">Save</button> <span id="pl-board-msg" role="status"></span></form>
+      <ol class="pl-board-list" id="pl-board-list"></ol>
+      <p class="cap">Each player's fastest finish of each screen, played straight through: a try with a cheat on, a skip, a byte edit, or a rewind in it does not count. <b>Race</b> takes you back to the start of the screen with that run as your ghost.</p>
     </div>
     <div class="pl-bar" id="pl-bar">
       <button type="button" data-act="pause" aria-pressed="false">Pause</button>
@@ -461,7 +473,8 @@ const LEVEL_OF = new Map([0x7000, 0x7080, 0x7100, 0x7180, 0x7200, 0x7300, 0x7380
 // finish yet, the latest try), and the next try on that screen plays it beside the player.
 const ghost = (function () {
   const best = new Map();                              // record -> { finished, track }
-  let cur = null;                                      // { rec, f0, track, over, seen }
+  let cur = null;                                      // { rec, f0, track, over, seen, clean }
+  let against = null;                                  // { rec, track, name }: a leaderboard run to race
   function step() {
     const M = rt.M, v = rt.chips.vic, rec = recAt(M);
     if (rt.over & 1) { if (cur) cur.over = true; return; }   // in the game over: the try has ended
@@ -470,19 +483,23 @@ const ghost = (function () {
         const finished = !cur.over, b = best.get(cur.rec);
         if (!b || (finished && (!b.finished || cur.track.length < b.track.length)) || (!finished && !b.finished)) best.set(cur.rec, { finished, track: cur.track });
         offer(cur.rec, cur.f0, finished);
+        if (finished && cur.clean && !log.ev.some(e => e.f >= cur.f0 && (e.t === 'skip' || e.t === 'poke'))) board.finished(cur.rec, cur.track);
       }
-      cur = { rec, f0: played, track: [], over: false, seen: rt.over };
+      cur = { rec, f0: played, track: [], over: false, seen: rt.over, clean: true };
+      board.screen(rec);
     }
+    if (rt.cheats.energy || rt.cheats.ghosts) cur.clean = false;
     cur.track.push([v[0] | ((v[0x10] & 1) << 8), v[1], M[0x07F8], v[0x15] & 1]);
   }
   function trim(T) {                                    // after a rewind: this try as far as T
     if (!cur) return;
     if (rt && recAt(rt.M) !== cur.rec || T < cur.f0) { cur = null; return; }
     cur.track.length = Math.max(0, T - cur.f0); cur.over = false; cur.seen = rt.over;
+    if (T > cur.f0) cur.clean = false;                  // rewound into the middle of the try
   }
   function at() {
     if (!cur) return null;
-    const b = best.get(cur.rec);
+    const b = against && against.rec === cur.rec ? against : best.get(cur.rec);
     if (!b) return null;
     const k = played - cur.f0;
     return { g: b.track[Math.min(k, b.track.length - 1)], b, done: k >= b.track.length };
@@ -506,6 +523,7 @@ const ghost = (function () {
   function note() {
     if (!cur) return 'The ghost appears on your second try of a screen.';
     const b = best.get(cur.rec), name = LEVELS[LEVEL_OF.get(cur.rec)] || 'this screen';
+    if (against && against.rec === cur.rec) return 'Ghost: ' + against.name + "'s run of " + name.toLowerCase() + ', ' + secs(against.track.length) + '.';
     if (!b) return 'Ghost: play ' + name.toLowerCase() + ' through once, or lose it, and your next try races that run.';
     return 'Ghost: ' + (b.finished ? 'your fastest finish of ' + name.toLowerCase() + ', ' + secs(b.track.length) : 'your last try at ' + name.toLowerCase() + ', which did not finish') + '.';
   }
@@ -526,7 +544,87 @@ const ghost = (function () {
     seek(raceAt); unpause(); screen.focus();
   });
   $('pl-race-no').addEventListener('click', e => { e.stopPropagation(); race.hidden = true; screen.focus(); });
-  return { step, trim, paint, note, reset() { best.clear(); cur = null; } };
+  // race a leaderboard run: back to where this screen began, with that run as the ghost
+  function raceWith(run) {
+    if (!cur || cur.rec !== run.rec || !running) return;
+    against = run;
+    if (!SHOW.ghost) { SHOW.ghost = true; document.querySelector('[data-show=ghost]').setAttribute('aria-pressed', 'true'); }
+    seek(cur.f0); unpause(); screen.focus();
+  }
+  return { step, trim, paint, note, raceWith, reset() { best.clear(); cur = null; against = null; } };
+})();
+
+// The leaderboard: each player's fastest clean finish of each screen, and their run as a ghost to
+// race. It needs somewhere shared to keep the runs. The site has none, so there the panel stays
+// hidden; a Claude artifact preview of the page keeps them in the artifact's shared database,
+// one document a player (board/<their id>) holding their name and best run of each screen.
+// The artifact's owner can take any run off the board.
+const board = (function () {
+  const box = $('pl-board'), list = $('pl-board-list'), form = $('pl-board-form'), nameIn = $('pl-board-name'), msg = $('pl-board-msg');
+  let db = null, me = null, owner = false, rec = null, mine = null;
+  const docs = new Map();                                     // player id -> { name, runs: { rec: { f, t } } }
+  // a run's track, 4 bytes a frame (x low, x high + sprite on, y, sprite pointer), as base64
+  const pack = T => { const b = new Uint8Array(T.length * 4); T.forEach(([x, y, p, on], i) => { b[4 * i] = x & 255; b[4 * i + 1] = (x >> 8) | (on << 1); b[4 * i + 2] = y; b[4 * i + 3] = p; }); let s = ''; for (const c of b) s += String.fromCharCode(c); return btoa(s); };
+  const unpack = s => { const b = Uint8Array.from(atob(s), c => c.charCodeAt(0)), T = []; for (let i = 0; i < b.length; i += 4) T.push([b[i] | ((b[i + 1] & 1) << 8), b[i + 2], b[i + 3], b[i + 1] >> 1 & 1]); return T; };
+  const okName = n => /^[A-Za-z0-9 _-]{3,16}$/.test(n) && /[A-Za-z]/.test(n);
+  function render() {
+    if (!db || rec === null) return;
+    $('pl-board-screen').textContent = (LEVELS[LEVEL_OF.get(rec)] || 'this screen').toLowerCase();
+    const rows = [];
+    for (const [id, d] of docs) { const r = d.runs && d.runs[rec]; if (r && d.name) rows.push({ id, name: d.name, f: r.f, t: r.t }); }
+    rows.sort((a, b) => a.f - b.f);
+    list.replaceChildren(...rows.slice(0, 10).map(r => {
+      const li = document.createElement('li'); li.className = r.id === me ? 'me' : '';
+      li.append(r.name + ', ' + secs(r.f));
+      const go = document.createElement('button'); go.type = 'button'; go.textContent = '👻 Race';
+      go.addEventListener('click', () => ghost.raceWith({ rec, name: r.name, track: unpack(r.t) }));
+      li.append(go);
+      if (owner) {
+        const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'Remove'; rm.title = 'Take this run off the board';
+        rm.addEventListener('click', () => { const d = docs.get(r.id), runs = { ...d.runs }; delete runs[rec]; db.doc('board/' + r.id).set({ ...d, runs }).catch(e => { msg.textContent = 'Could not remove it: ' + (e.code || e.message); }); });
+        li.append(rm);
+      }
+      return li;
+    }));
+    if (!rows.length) list.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'No finishes yet. Be the first.' }));
+  }
+  function save() {
+    if (!db || !me || !mine) return Promise.resolve();
+    return db.doc('board/' + me).set(mine).catch(e => { msg.textContent = 'Could not save: ' + (e.code || e.message); });
+  }
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const n = nameIn.value.trim();
+    if (!okName(n)) { msg.textContent = 'Use 3 to 16 letters, digits, spaces, - or _.'; return; }
+    mine = { ...(mine || { runs: {} }), name: n };
+    save().then(() => { msg.textContent = 'Saved.'; });
+  });
+  (async () => {
+    const C = window.claude && window.claude.use ? window.claude : null;
+    if (!C) return;
+    const [d, u] = await Promise.all([C.use('db'), C.use('user')]);
+    if (!d || !u) return;
+    db = d; me = await u.id(); owner = await u.isOwner();
+    box.hidden = false;
+    db.collection('board').onSnapshot(snap => {
+      docs.clear();
+      for (const x of snap.docs) docs.set(x.id, x.data() || {});
+      if (me && docs.has(me)) { mine = docs.get(me); if (document.activeElement !== nameIn) nameIn.value = mine.name || ''; }
+      render();
+    }, () => { msg.textContent = 'The board could not be read.'; });
+  })();
+  return {
+    screen(r) { if (r !== rec) { rec = r; render(); } },
+    // a clean finish: kept when it beats the player's own best of the screen
+    finished(r, track) {
+      if (!db || !me) return;
+      if (!mine || !mine.name) { msg.textContent = 'Put your name in to post your time of ' + secs(track.length) + '.'; return; }
+      const old = mine.runs && mine.runs[r];
+      if (old && old.f <= track.length) return;
+      mine = { ...mine, runs: { ...(mine.runs || {}), [r]: { f: track.length, t: pack(track) } } };
+      save().then(() => { msg.textContent = 'Posted ' + secs(track.length) + '.'; });
+    },
+  };
 })();
 
 // The enemies' paths: each slot's script ($4A00 on) stepped on from where the slot is, as
