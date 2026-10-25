@@ -290,7 +290,7 @@
   },
   {
    "start": 39950,
-   "end": 40405,
+   "end": 40076,
    "type": "Byte"
   },
   {
@@ -2155,30 +2155,6 @@
   {
    "address": 40016,
    "name": "str_headered_9C50",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40077,
-   "name": "str_plain_9C8D",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40113,
-   "name": "str_plain_9CB1",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40271,
-   "name": "str_plain_9D4F",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40320,
-   "name": "str_plain_9D80",
    "type": "UserDefined",
    "kind": "user"
   },
@@ -4437,26 +4413,6 @@
    "address": 40016,
    "type": "line",
    "text": "Headered text $9C50-$9C8C. Layout byte $08, colour byte $04; zero terminates its body. Content without framing glyph controls: \"\\n So be it, you are freed in \\nexchange for 1 hour of time.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the Scene 8 overlay."
-  },
-  {
-   "address": 40077,
-   "type": "line",
-   "text": "Text fragment $9C8D-$9CB0. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"are standing in front of a\\npopcorn stand.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the Scene 8 overlay."
-  },
-  {
-   "address": 40113,
-   "type": "line",
-   "text": "Text fragment $9CB1-$9D4E. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"You enter a small empty theater, find\\na seat and sit down. The lights dim,\\nthe curtain parts, and the movie\\nbegins. A herd of elephants sweep\\nmajestically across the plain.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the Scene 8 overlay."
-  },
-  {
-   "address": 40271,
-   "type": "line",
-   "text": "Text fragment $9D4F-$9D7F. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"A herd of elephants sweep\\nmajestically across the plain.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the Scene 8 overlay."
-  },
-  {
-   "address": 40320,
-   "type": "line",
-   "text": "Text fragment $9D80-$9DD5. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"A commercial comes on for the movie\\n\\\"Labyrinth\\\", now playing at your\\nneighborhood theater.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the Scene 8 overlay."
   },
   {
    "address": 40960,

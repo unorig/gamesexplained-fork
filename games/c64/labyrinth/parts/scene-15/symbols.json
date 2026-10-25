@@ -279,11 +279,6 @@
    "type": "Byte"
   },
   {
-   "start": 40218,
-   "end": 40959,
-   "type": "Byte"
-  },
-  {
    "start": 40960,
    "end": 42111,
    "type": "Byte"
@@ -2191,90 +2186,6 @@
    "kind": "user"
   },
   {
-   "address": 40218,
-   "name": "str_plain_9D1A",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40271,
-   "name": "str_plain_9D4F",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40320,
-   "name": "str_plain_9D80",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40406,
-   "name": "str_plain_9DD6",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40457,
-   "name": "str_plain_9E09",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40550,
-   "name": "str_plain_9E66",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40570,
-   "name": "str_plain_9E7A",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40697,
-   "name": "str_plain_9EF9",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40726,
-   "name": "str_plain_9F16",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40786,
-   "name": "str_plain_9F52",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40816,
-   "name": "str_plain_9F70",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40842,
-   "name": "str_plain_9F8A",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40870,
-   "name": "str_plain_9FA6",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
-   "address": 40884,
-   "name": "str_plain_9FB4",
-   "type": "UserDefined",
-   "kind": "user"
-  },
-  {
    "address": 40960,
    "name": "stonecos_costume_size",
    "type": "Field",
@@ -4090,76 +4001,6 @@
    "address": 40202,
    "type": "line",
    "text": "Sixteen bytes $05 $12 $14 $19 $1E $1D $1F $23 $28 $2A $2C $1A $21 $26 $27, then $00. stone_setup_once passes this address to resident $0833, which marks each listed command-wheel entry unavailable until the zero terminator; its pointer is stored in the operand at $0AE5/$0AE6."
-  },
-  {
-   "address": 40218,
-   "type": "line",
-   "text": "Text fragment $9D1A-$9D4E. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"ns. A herd of elephants sweep\\nmajestically across the plain.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40271,
-   "type": "line",
-   "text": "Text fragment $9D4F-$9D7F. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"A herd of elephants sweep\\nmajestically across the plain.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40320,
-   "type": "line",
-   "text": "Text fragment $9D80-$9DD5. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"A commercial comes on for the movie\\n\\\"Labyrinth\\\", now playing at your\\nneighborhood theater.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40406,
-   "type": "line",
-   "text": "Text fragment $9DD6-$9E08. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"You watch a show called \\\"The Making\\nof the Elephant Movie\\\".\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40457,
-   "type": "line",
-   "text": "Text fragment $9E09-$9E65. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"A commercial comes on for the game\\n\\\"Labyrinth\\\", \\\"the best graphic\\nadventure game ever made.\\\"\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40550,
-   "type": "line",
-   "text": "Text fragment $9E66-$9E79. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"There is no owl here.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40570,
-   "type": "line",
-   "text": "Text fragment $9E7A-$9EF8. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"You press your face into the TV\\ndinner. The sensations of the\\nmashed potatoes and gravy on\\nyour cheeks are surprisingly\\nenjoyable.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40697,
-   "type": "line",
-   "text": "Text fragment $9EF9-$9F15. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"There is nothing here to take.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40726,
-   "type": "line",
-   "text": "Text fragment $9F16-$9F51. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"There is also a combination video\\nrecorder and camera here.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40786,
-   "type": "line",
-   "text": "Text fragment $9F52-$9F6F. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"You can't enter without a ticket.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40816,
-   "type": "line",
-   "text": "Text fragment $9F70-$9F89. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"Why, thank you very much!\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40842,
-   "type": "line",
-   "text": "Text fragment $9F8A-$9FA5. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"There is no one to give that to.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40870,
-   "type": "line",
-   "text": "Text fragment $9FA6-$9FB3. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"No thank you.\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay."
-  },
-  {
-   "address": 40884,
-   "type": "line",
-   "text": "Text fragment $9FB4-$9FFF. No layout and colour header: the code that prints it supplies them; zero terminates it. Content without framing glyph controls: \"The cute girl smiles, \\\"No thank you,\\nthe popcorn here is terrible! Nice of\\nyou to off\". The resident parser $67B7 handles literal text, dictionary tokens and line breaks. This text is printed by the stone overlay. The stored text stops at $A000, where the costume loaded at $A000 overwrote the rest of the overlay."
   },
   {
    "address": 40960,

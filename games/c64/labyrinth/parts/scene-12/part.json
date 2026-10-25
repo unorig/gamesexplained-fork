@@ -23,7 +23,7 @@
     "extra": [
       [
         "$7900",
-        "$9FFF",
+        "$9BEE",
         "AV costume and UC overlay (the overlay continues under the costume loaded at $A000)"
       ],
       [
