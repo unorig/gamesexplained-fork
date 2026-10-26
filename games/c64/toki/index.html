@@ -52,7 +52,7 @@ code{font-family:var(--fm);font-size:.82em;background:var(--chip);color:var(--ch
   <h1>Toki</h1>
   <p class="sub">Ocean's conversion of TAD Corporation's 1989 arcade platformer, in which a warrior turned into an ape spits fireballs to rescue his captured love. On the C64 it shipped as a 128 KB cartridge, and the game treats that cartridge as a library it copies from rather than a program it runs.</p>
 </header>
-<main class="wrap">
+<main class="wrap" data-part="resident">
 <section>
   <p class="fig">01 · The cartridge</p>
   <h2 class="t">Sixteen banks behind one window</h2>
@@ -96,7 +96,25 @@ code{font-family:var(--fm);font-size:.82em;background:var(--chip);color:var(--ch
   <p>The player routine also tests for a joystick combination that no player would press by accident <code>$8572</code>. <a href="discoveries.html#skip">The Discoveries tab</a> says what it does.</p>
 </section>
 <section>
-  <p class="fig">05 · The release</p>
+  <p class="fig">05 · The stages</p>
+  <h2 class="t">Five stages loaded over the same addresses</h2>
+  <p>A stage is three pieces from the cartridge, copied or unpacked over whatever the last stage left <code>$0A9B</code>: the playfield character set at <a href="source-stage-1.html#C000"><code>$C000</code></a>, stage code at <a href="source-stage-1.html#BD76"><code>$BD76</code></a>, and a packed block that unpacks to <a href="source-stage-1.html#0C01"><code>$0C01</code></a> and holds the map, the section records, and the object scripts. The Source tab therefore has a page for the resident game and one for each stage, because the same addresses hold different bytes in each.</p>
+  <table>
+    <tr><th>Stage</th><th>Block bytes</th><th>Packed</th><th>Sections</th><th>Map rows</th><th>Map blocks</th><th>Scripts</th><th>Code bytes</th><th>Character set bytes</th></tr>
+    <tr><td><a href="source-stage-1.html">Stage 1</a>, Labyrinth of Caves</td><td>5,343</td><td>2,695</td><td>8</td><td>56</td><td>91</td><td>61</td><td>245</td><td>1,920</td></tr>
+    <tr><td><a href="source-stage-2.html">Stage 2</a>, Lake Neptune</td><td>6,787</td><td>3,204</td><td>8</td><td>34</td><td>95</td><td>45</td><td>541</td><td>1,912</td></tr>
+    <tr><td><a href="source-stage-3.html">Stage 3</a>, Caverns of Fire</td><td>7,116</td><td>3,306</td><td>10</td><td>87</td><td>74</td><td>61</td><td>658</td><td>1,144</td></tr>
+    <tr><td><a href="source-stage-4.html">Stage 4</a>, Ice Palace</td><td>5,923</td><td>3,014</td><td>12</td><td>33</td><td>61</td><td>50</td><td>393</td><td>1,224</td></tr>
+    <tr><td><a href="source-stage-5.html">Stage 5</a>, Dark Jungle</td><td>5,562</td><td>2,230</td><td>8</td><td>76</td><td>75</td><td>29</td><td>428</td><td>1,704</td></tr>
+  </table>
+  <p>The block's first 33 bytes are a header whose last 22 are eleven table pointers, copied to zero page when the stage starts. Most tables are found through a pointer rather than at a fixed address (the colour table at <a href="source-stage-1.html#0C22"><code>$0C22</code></a> and the section table at <a href="source-stage-1.html#0D22"><code>$0D22</code></a> are read at fixed addresses): the block table starts at <a href="source-stage-1.html#0D32"><code>$0D32</code></a> in Stage 1 and at <a href="source-stage-3.html#0D36"><code>$0D36</code></a> and <a href="source-stage-4.html#0D3A"><code>$0D3A</code></a> in Stages 3 and 4, because their section tables are longer, and the order of the tables after the map differs from stage to stage.</p>
+  <h3>One call, five different routines</h3>
+  <p>Stage objects reach the stage code through a table of addresses that is the same for every stage <code>$B382</code>. Entries 6, 10, 20, 21, and 25 all point at <a href="source-stage-1.html#BD76"><code>$BD76</code></a>, so the first routine of each stage does a different job: Stage 1 starts the arc objects <a href="source-stage-1.html#BD76"><code>$BD76</code></a>, Stage 2 a burst of short-lived objects <a href="source-stage-2.html#BD76"><code>$BD76</code></a>, Stage 3 moves an object left by its speed <a href="source-stage-3.html#BD76"><code>$BD76</code></a>, Stage 4 picks an object kind <a href="source-stage-4.html#BD76"><code>$BD76</code></a>, and Stage 5 bounces an object off the ground <a href="source-stage-5.html#BD76"><code>$BD76</code></a>. Where another entry address falls inside an instruction of a stage, the entry is not a routine start there.</p>
+  <h3>A patch at the start of a round</h3>
+  <p>The game then patches what it has just loaded <code>$4DDB</code>, mostly fields of the block, plus a few bytes of stage code and animation data. The patcher counts stages from 0, so the patch it runs for the value 2 is Stage 3's. Stage 3's, for example, pins the view to one height in section 2 when a round starts in section 0 or 1, and clears the right limit of section 6; Stage 4's sets the right limit of section 8 and the lower limit of section 7 (sections count from 0). All of those are fields of the section records that decide how far the view may scroll in each section. Stage 2's patch sets up the counters of a routine that steps through nineteen timed steps, kept in the block at <a href="source-stage-2.html#2018"><code>$2018</code></a>.</p>
+</section>
+<section>
+  <p class="fig">06 · The release</p>
   <h2 class="t">An arcade game on a cartridge, and the only one Ocean made for 8-bit</h2>
   <p>TAD Corporation made Toki for the arcades in 1989.<sup class="fn"><a href="about.html#src-1" title="Wikipedia">1</a></sup> Ocean Software published the Commodore 64 version in 1991, on a cartridge only, alongside versions for the Amiga and Atari ST.<sup class="fn"><a href="about.html#src-1" title="Wikipedia">1</a></sup> The C64 version was the only 8-bit computer version Ocean released, and it leaves out the arcade's full intro, one of its music tracks, and one of its levels.<sup class="fn"><a href="about.html#src-3" title="Retro Gamer">3</a></sup> The cartridge itself stores five stage names.</p>
   <p>The manual credits the program to Al Dukes, the graphics to Mike Clayton, Joff Scarcliffe, and William Harbison, and the music and effects to Keith Tinman.<sup class="fn"><a href="about.html#src-2" title="C64 manual">2</a></sup></p>
