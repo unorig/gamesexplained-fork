@@ -10,7 +10,7 @@
   <p class="eyebrow" style="margin-top:36px">{{platform_name}} · {{year}} · {{publisher}}</p>
   <h1 style="margin-top:0">About this page</h1>
   <h2 id="copy">The copy studied</h2>
-  <p>The copy studied is a cartridge image in Ocean's type 1 layout: sixteen banks of 8 KB, 128 KB in all. The Source tab is the memory during play, taken from an emulator snapshot after stage 1 had started, because the game runs from RAM with the cartridge hidden.</p>
+  <p>The copy studied is a cartridge image in Ocean's type 1 layout: sixteen banks of 8 KB, 128 KB in all. The Source tab is the memory during play, taken from emulator snapshots, because the game runs from RAM with the cartridge hidden. It has six pages: the resident game, from a snapshot after stage 1 had started, and one for each of the five stages, whose pieces the game loads over the same addresses.</p>
   <h2>Footprint</h2>
   <p class="mute">Every byte of the C64's 64 KB, one pixel each, 512 to a row. Lit pixels are what this game is: its code, graphics, level data, sound, text, tables, and variables, exactly where they sit in memory. Dim areas are screen and working memory; dark is unused.</p>
   <div id="memmap"></div>
@@ -22,6 +22,7 @@
     {{listing_row}}
     <tr><th>Build analysed</th><td>{{build}}</td></tr>
     <tr><th>Copy</th><td>{{copy}}</td></tr>
+    <tr><th>Gold pass</th><td>The edits to How it works, Controls, Gameplay, Maps / levels, and Graphics in the Gold pass of 8 November 2026 were drafted on Claude Sonnet 5.5, a model the kit does not count as proven, and no proven model had read them when the pass ended. The sound annotations, the Music player, and the Discoveries and About edits were made on Claude Opus 5.5.</td></tr>
     <tr><th>Tools</th><td>{{tools}}</td></tr>
     <tr><th>Model</th><td>{{model}}</td></tr>
     <tr><th>Kit version</th><td>{{kit_version}}</td></tr>

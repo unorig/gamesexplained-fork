@@ -1,6 +1,6 @@
 # Toki — TODO
 
-Tier: silver-claimed (Gold started 2026-10-25, section 04 The frame added; Euan to say what is dull). Was Silver (2026-10-25, kit/CHECKING.md). Coverage 100.0 %. Sample 7301: 13 of 60 wrong; full audit by Opus 5.5 (275 of 1,173 comments rewritten, facts.md 27 claims, 18 renames); sample 4417: 4 of 60 wrong, corrected. Open: 15 comments on cartridge banks (sprite shapes, object definitions) need the cartridge image or Euan's bank sources to check.
+Tier: gold (Gold pass 2 on 8 November 2026: every page reviewed with the steward, Music player added with test_music.js, the sound driver's 23 command handlers and tune data typed and described). For Diamond: a Play tab ported to JavaScript (Platinum). Open: a proven model's read of the edits to How it works, Controls, Gameplay, Maps / levels, and Graphics, which were drafted on Sonnet 5.5; 15 comments on cartridge banks (sprite shapes, object definitions) need the cartridge image or the steward's bank sources; which script uses command 31 to start tune sets 0 and 2.
 
 Next: stages 2-5 are parts (26 October 2026, all 100 %); open: stage code entries that fall inside instructions (left unnamed), one stray Stage 4 map byte ($1178 = $3F, above its 61 blocks), Stage 2's $2E87 and Stage 3's $30CA-$30DA patch targets (animation data), the stage 2 sequence tables' purpose, 15 bank comments, reviews (Commodore Format 86 % unconfirmed), Play tab (not at this stage).
 
