@@ -56,13 +56,13 @@ code{font-family:var(--fm);font-size:.82em;background:var(--chip);color:var(--ch
 <section id="stages">
   <p class="fig">Stages</p>
   <h2 class="t">Five stages against a clock</h2>
-  <p class="lede">Each stage has its own name and its own clock, which starts at 4:30.</p>
-  <p>The stages are Labyrinth of Caves, Lake Neptune, Caverns of Fire, Ice Palace, and Dark Jungle. The clock counts down from 4:30 in the status bar <code>$8295</code>, and its digits change colour for the last minute <code>$82E2</code>. Zzap!64 found the levels fairly big and not hard early on, and called the mix of horizontal and vertical scrolling and swimming sections unpredictable.<sup class="fn"><a href="about.html#src-4" title="Zzap!64 80">4</a></sup></p>
+  <p class="lede">Five stages, each with its own map, and a 4:30 clock that starts again every time.</p>
+  <p>The stages are <a href="levels.html#stage1">Labyrinth of Caves</a>, <a href="levels.html#stage2">Lake Neptune</a>, <a href="levels.html#stage3">Caverns of Fire</a>, <a href="levels.html#stage4">Ice Palace</a>, and <a href="levels.html#stage5">Dark Jungle</a>. The clock counts down from 4:30 in the status bar <code>$8295</code>, and its digits change colour for the last minute <code>$82E2</code>. Zzap!64 found the levels fairly big and not hard early on, and called the mix of horizontal and vertical scrolling and swimming sections unpredictable.<sup class="fn"><a href="about.html#src-4" title="Zzap!64 80">4</a></sup></p>
 
-  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-2.png" alt="Stage 2, Lake Neptune: a cave with a ledge, a ramp, and a gun on a rock"><p class="cap"><b>Stage 2, Lake Neptune.</b> The clock reads 4:29 a moment after the start.</p></div>
-  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-3.png" alt="Stage 3, Caverns of Fire: a blue-tiled platform above a floor of flame"><p class="cap"><b>Stage 3, Caverns of Fire.</b> The clock reads 4:29 a moment after the start.</p></div>
-  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-4.png" alt="Stage 4, Ice Palace: ice crystals above green tiles and white rock"><p class="cap"><b>Stage 4, Ice Palace.</b> The clock reads 4:29 a moment after the start.</p></div>
-  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-5.png" alt="Stage 5, Dark Jungle: a jungle floor under a blue sky"><p class="cap"><b>Stage 5, Dark Jungle.</b> The clock reads 4:29 a moment after the start.</p></div>
+  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-2.png" alt="Stage 2, Lake Neptune: a cave with a ledge, a ramp, and a gun on a rock"><p class="cap"><b>Stage 2, Lake Neptune.</b> 8 sections over 34 map rows; <a href="levels.html#stage2">see its map</a>.</p></div>
+  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-3.png" alt="Stage 3, Caverns of Fire: a blue-tiled platform above a floor of flame"><p class="cap"><b>Stage 3, Caverns of Fire.</b> 10 sections over 87 map rows; <a href="levels.html#stage3">see its map</a>.</p></div>
+  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-4.png" alt="Stage 4, Ice Palace: ice crystals above green tiles and white rock"><p class="cap"><b>Stage 4, Ice Palace.</b> 12 sections over 33 map rows; <a href="levels.html#stage4">see its map</a>.</p></div>
+  <div class="plate" style="margin-top:20px"><img class="reference" src="reference/stage-5.png" alt="Stage 5, Dark Jungle: a jungle floor under a blue sky"><p class="cap"><b>Stage 5, Dark Jungle.</b> 8 sections over 76 map rows; <a href="levels.html#stage5">see its map</a>.</p></div>
 </section>
 <section id="lives">
   <p class="fig">Lives and score</p>
@@ -74,7 +74,15 @@ code{font-family:var(--fm);font-size:.82em;background:var(--chip);color:var(--ch
   <p class="fig">Weapons</p>
   <h2 class="t">Five weapon records, and a countdown</h2>
   <p class="lede">Toki spits fireballs, and picking up an item can change how.</p>
-  <p>The game stores five weapon records, and an item that carries a weapon copies the matching record's address into the pointer the fire routine reads <code>$B8F8</code>. The pick-up also stores the weapon's number, 0 to 4, which the fire routine tests <code>$08E0</code>. Weapons 0 to 2 make one shot for a press of fire, and weapon 1 takes 2 hit points off an object instead of 1. Weapons 0 and 1 play a firing sound and weapon 2 plays none. Weapons 3 and 4 make two shots and play a different sound. A picked-up weapon lasts until a countdown runs out, and then the game goes back to weapon 0 <code>$08CD</code>.</p>
+  <p>The game stores five weapon records, and an item that carries a weapon copies the matching record's address into the pointer the fire routine reads <code>$B8F8</code>. The pick-up also stores the weapon's number, 0 to 4, which the fire routine tests <code>$08E0</code>. A picked-up weapon lasts until a countdown runs out, and then the game goes back to weapon 0 <code>$08CD</code>.</p>
+  <table>
+    <tr><th>Weapon</th><th>Shots per press</th><th>Damage to an object</th><th>Sound</th></tr>
+    <tr><td>0</td><td>1</td><td>1</td><td>firing sound</td></tr>
+    <tr><td>1</td><td>1</td><td>2</td><td>firing sound</td></tr>
+    <tr><td>2</td><td>1</td><td>1</td><td>none</td></tr>
+    <tr><td>3</td><td>2</td><td>not checked</td><td>a different sound</td></tr>
+    <tr><td>4</td><td>2</td><td>not checked</td><td>a different sound</td></tr>
+  </table>
   <p>Another item gives Toki a timed effect <code>$A868</code>, and his sprite flashes as the effect runs out <code>$B8CF</code>. Zzap!64 says the American football helmet gives a brief period of invincibility.<sup class="fn"><a href="about.html#src-4" title="Zzap!64 80">4</a></sup></p>
 </section>
 </main>
