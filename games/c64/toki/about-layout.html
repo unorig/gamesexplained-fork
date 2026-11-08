@@ -40,6 +40,7 @@
     <li id="src-5"><i>Commodore Force</i> No. 5, May 1993, page 18, the Round-Up entry for <i>Toki</i>, from a scan of the page the steward supplied on 25 October 2026: the 79 % Force Factor and the reviewer's words. The last line of the text is cut off in the scan.</li>
     <li id="src-6"><i>Commodore Power</i>, page 43, the review of <i>Toki</i> by Richard Taylor, from a scan of the page the steward supplied on 25 October 2026: the price, the four Critical Factor ratings, the 73 % Danger Rating, and the reviewer's words. The scan does not show the issue number or date. This is probably where Lemon64's 73 % comes from.</li>
     <li id="src-7">A live check in VICE on 25 October 2026 (play snapshot, joystick and SPACE keypress): with SPACE pressed once, the driver was loaded with the three start addresses of the second set at $70C0, and a second press switched the music off.</li>
+    <li id="src-8">The Music player's check, <code>test_music.js</code> beside the page: each tune set for 6,000 frames and each effect until it ends, the player's writes to the sound chip compared in order, frame by frame, with the game's own calls run on the kit's 6502 simulator over the Source tab's bytes; it runs in CI.</li>
   </ol>
   <h2>What the game does, and where we found it</h2>
   {{features}}
