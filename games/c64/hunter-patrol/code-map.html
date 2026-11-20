@@ -37,7 +37,7 @@
   .cm-edge.jump path{stroke-dasharray:6 4}
   .cm-edge.falls path{stroke-dasharray:1.5 3.5;stroke-width:2}
   .cm-edge.hi path{stroke:var(--edge-hi);stroke-width:2.3}
-  #cm-detail{position:sticky;top:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;font-size:15px}
+  #cm-detail{position:sticky;top:calc(var(--tabs-h,72px) + 12px);max-height:calc(100vh - var(--tabs-h,72px) - 24px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;font-size:15px}
   #cm-detail h3{font-family:var(--fm);font-size:16px;margin:0 0 2px;word-break:break-all}
   #cm-detail .meta{font-family:var(--fm);font-size:12.5px;color:var(--ink-mute);margin:0 0 10px}
   #cm-detail .tag{display:inline-block;font-family:var(--fm);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1.5px solid;margin:0 0 8px}
@@ -71,7 +71,7 @@
 <section id="calls">
   <p class="fig">02 · Who calls whom</p>
   <h2 class="t">The wiring between the subroutines</h2>
-  <p class="lede">Each box is one subroutine, taller when it is longer, in a band for its job. Inside a band, the boxes run from the first reached to the last. Hover over a box to light up its connections, or click it to keep them lit and read what it does. A box marked ▶ shows that routine at work on its own: the game is held still and dimmed while only that routine runs.</p>
+  <p class="lede">Each box is one subroutine, taller when it is longer, in a band for its job. Inside a band, the boxes run from the first reached to the last. Hover over a box to light up its connections, or click it to keep them lit and read what it does. A box marked ▶ shows that routine at work on its own: the game is held still and dimmed while only that routine runs, and a tune is drawn as its notes.</p>
   <div class="cm-legend" id="cm-graph-legend"></div>
   <div class="cm-grid" style="margin-top:14px">
     <div class="plate" style="padding:8px"><svg id="cm-graph" class="cm-graph" role="img" aria-label="Call graph"></svg></div>
@@ -103,19 +103,36 @@
     hits: ['Hits, scores and strafing runs', 'hits_play hits_sky_crash sprite_slot_hi sprite_slot_lo plane_crash add_score resolve_hits strafing_runs start_run place_target hits_strafing run_slot_hi run_slot_lo target_hit show_target_hits run_result'],
     sound: ['Sound and music', 'start_music start_engine_sound engine_sound shot_sound hit_sound music_init music_play music_start music_irq music_stop music_reset music_silence tune2_start tune2_irq tune2_init tune2_tick'],
   };
-  // A loop for each routine whose work can be seen, drawn live: the Play tab's port of the game
-  // (reference/hp-port.js) is run to the middle of the first level and held still, and then only the
-  // routines named run, a pass at a time at the game's pace, on the game's own memory. The bands'
-  // sprites are set as game_irq ($13AB) would set them from the band images. Bright is what those
-  // routines change: the pixels that differ over the first passes (change), or the sprites in on
-  // (a mask of sprites for each band: sky, ground); ctx sprites are shown dimmed, for their place,
-  // and the other sprites are hidden. crop is the part of the screen shown, in renderFrame's pixels.
+  // A loop for each routine whose work can be seen or heard, drawn live: the Play tab's port of the
+  // game (reference/hp-port.js) is run to the title screen and to the middle of the first level and
+  // held still there, and then only the routines named run, a pass at a time at the game's pace, on
+  // the game's own memory. In play the bands' sprites are set as game_irq ($13AB) would set them from
+  // the band images. Bright is what those routines change: the pixels that differ over the first
+  // passes (change), or the sprites in on (a mask of sprites for each band: sky, ground); ctx sprites
+  // are shown dimmed, for their place, and the other sprites are hidden. crop is the part of the
+  // screen shown, in renderFrame's pixels. A roll is music: the sound chip's three voices drawn as
+  // notes on a scrolling stave. cycle starts the loop again from the snapshot after that many passes,
+  // and done(M) when it says so; start(M, P, E, k) sets up its k-th time round.
   const run = g => { if (g && g.next) for (const _ of g); };
   const TURN = [0, 1, 2, 1, 0, 0xFF, 0xFE, 0xFF];
-  // read_inputs ($1920) takes $33 from voice 3's noise and $36 from the raster line, both random
-  // enough; here a little generator stands in for them
+  // read_inputs ($1920) takes $33 from voice 3's noise and $36 from the raster line, and the game
+  // reads the timers and the noise for other random numbers; here a little generator stands in
   let seed = 1;
   const noise = () => (seed = (seed * 1103515245 + 12345) >>> 0) >>> 24;
+  const TITLE = [32, 35, 352, 235], PANEL = [32, 195, 352, 235];
+  // the joystick in $DC01: 0 bits pressed (left 4, right 8, fire 16)
+  const STICK = { L: 0x1B, R: 0x17, F: 0x0F, N: 0x1F };
+  // the name entry spelling HUNTER from the cursor's start at the end mark (position 27); the
+  // alphabet row is . A-Z and the end mark, so A is position 1
+  const SPELL = (() => {
+    let x = 27, s = '';
+    for (const ch of 'HUNTER') {
+      const to = ch.charCodeAt(0) - 64, r = (to - x + 28) % 28;
+      s += r <= 14 ? 'R'.repeat(r) : 'L'.repeat(28 - r);
+      s += 'FN'; x = to;
+    }
+    return s + 'N'.repeat(12);
+  })();
   const CLIPS = {
     move_stripes: { crop: [40, 50, 342, 196], change: 64, pass: P => P.move_stripes(),
       text: 'The ground never scrolls. Each pass move_stripes redraws the stripes a few bytes further down the ground characters, faster near the bottom, so the fields seem to roll towards the plane.' },
@@ -133,12 +150,50 @@
       start(M) { for (let i = 0; i < 4; i++) M[0x8530 + 16 * i] = 0; },
       pass(P, M, t) { M[0x33] = t % 200 ? noise() | 1 : 0; M[0x36] = noise(); if (!(M[0x1E] & 7)) M[0x21] = (M[0x21] + 1) & 255; P.spawn_aircraft(); P.sort_aircraft(); },
       text: 'Three times the game\'s speed. spawn_aircraft starts an enemy aircraft close by at one edge when the noise byte at $33 comes up 0 (here, every 200 passes); move_aircraft then drifts it left, right, up and down by its movement bits, turning now and then at random, while it shrinks into the distance and is freed.' },
+    move_ground: { crop: [40, 96, 342, 198], on: [0, 0xF0], speed: 2,
+      start(M) { M[0x22] = 0; for (let i = 0; i < 4; i++) M[0x80C0 + 16 * i] = 0; },
+      pass(P, M, t) { M[0x33] = t % 160 ? noise() | 1 : 0; M[0x36] = noise(); run(P.spawn_ground()); P.sort_ground(); },
+      text: 'Twice the game\'s speed. spawn_ground starts a ground object on the horizon at a random place when the noise byte at $33 comes up right (here, every 160 passes); move_ground brings each one nearer, larger as it comes, until it passes under the plane and is freed.' },
+    move_flak: { crop: [40, 38, 342, 198], on: [0x04, 0x04], ctx: [0x01, 0x09],
+      pass(P) { run(P.move_flak()); },
+      text: 'move_flak starts a flak shell from the ground at a random place, carries it up the screen, and bursts it at a random height: three burst pictures, one every 32 passes, before the record is freed.' },
+    place_target: { crop: [40, 96, 342, 198], on: [0, 0x70], speed: 2,
+      start(M, P, E, k) { M[0x41] = 0x80; M[0x44] = k % 4; M[0x43] = 0; M[0x22] = 0; E.toggle = true; run(P.start_run()); E.toggle = false; },
+      done: M => !M[0x80C0],
+      pass(P) { run(P.place_target()); },
+      text: 'The four levels\' targets in turn, at twice the game\'s speed. For a strafing run, start_run copies the level\'s set of target shapes to $7800, from the address in the table at $8B80, and puts the target on the horizon in three parts; place_target brings it nearer each pass, picking larger shapes as it comes.' },
+    colour_title: { scene: 'title', crop: TITLE, change: 120, maskEvery: 10,
+      pass(P, M, t, E) { const p = t % 120; if (p === 1) E.colour.fill(1); if (p === 60) P.colour_title(); },
+      text: 'colour_title gives each character of the title screen the colour that the table at $8100 holds for its code, so every letter of the logo takes its own colours, then colours the highscore rows and the alphabet. Here it runs against a screen of white every 120 passes.' },
+    insert_row: { scene: 'title', crop: TITLE, change: 420, maskEvery: 10, cycle: 420,
+      pass(P, M, t) { if (t % 70 === 30) { for (let i = 0; i < 5; i++) M[0x13 + i] = i < 1 ? 0 : noise() % 10; P.insert_score(); } },
+      text: 'A random score is tried every 70 passes. insert_score compares it with the five in the table, from the top; insert_row moves the rows below its place down one, dropping the last, and writes the score with a blank name, in white.' },
+    enter_name: { scene: 'title', crop: TITLE, change: SPELL.length, maskEvery: 1, cycle: SPELL.length, rate: 7.5,
+      start(M, P, E) { [0, 1, 2, 3, 4].forEach((d, i) => { M[0x13 + i] = d; }); P.insert_score(); E.gen = P.enter_name(); E.step(); },
+      pass(P, M, t, E) { E.joy = STICK[SPELL[(t - 1) % SPELL.length]]; E.step(); },
+      text: 'After a new highscore, enter_name moves a white cursor along the alphabet row as the stick goes left and right, with a short delay between moves, and fire writes the letter into the new row of the table. Here it spells HUNTER.' },
+    add_score: { crop: PANEL, change: 400, maskEvery: 5, cycle: 1000,
+      pass(P, M, t) { if (t % 25 === 0) P.add_score(t % 50 ? 0x32 : 0x64); },
+      text: 'add_score adds to the last digit and carries through the five digits at $13, then writes them to the status panel: 50 for an aircraft and 100 for a ground object, here one every 25 passes.' },
+    draw_distance_bar: { crop: PANEL, change: 520, maskEvery: 5,
+      start(M, P) { for (let y = 0xA0; y > 0; y--) M[0x496F + y] = 0xFF; M[0x41] = 0; M[0x44] = 0; P.set_hits_needed(); },
+      done: M => M[0x41] === 3 && M[0x42] === 1,
+      pass(P, M, t) { if (t % 25 === 0) { M[0x42]--; run(P.draw_distance_bar()); } },
+      text: 'Each hit on the current kind of defence fills more of the distance bar, from the right; each of the four kinds has its own section, and a new kind starts when the hits it needs ($42) reach 0. Here a hit is counted every 25 passes. In the game the fourth kind\'s last hit starts the strafing run.' },
+    music_play: { roll: true, rate: 985248 / 18433,
+      start(M, P) { P.music_start(); },
+      pass(P) { P.music_irq(); },
+      text: 'The title tune, from Rob Hubbard\'s music driver: music_play runs 53 times a second from CIA 1\'s timer, and each line here is one of the sound chip\'s three voices (numbered at the right edge), its pitch as it plays. Sound is not played here; the Music tab plays it.' },
+    tune2_tick: { roll: true, rate: 985248 / 12289,
+      start(M, P, E) { E.call(0x1050); },
+      pass(P, M, t, E) { if (M[0x12]) E.call(0x1050); E.call(0x10A0); },
+      text: 'The second tune that nothing in the game calls, run as its own interrupt would run it, 80 times a second: tune2_tick counts down each voice\'s note and starts the next. Notes of 16 and 8 ticks are never released, so those voices hold on.' },
     plane_crash: { crop: [104, 38, 280, 198], on: [0x01, 0x09],
       pass(P, M) { if (!M[0x3F] || M[0x3F] >= 0x9F) M[0x3F] = 1; run(P.plane_crash()); },
       text: 'The crash: every other pass the plane and its shadow show the next explosion picture. In the game a life is then taken and play starts again.' },
   };
-  // The game held still. The port is run once, the first time a loop is shown: 350 frames from the
-  // start, with fire pressed on the title.
+  // The game held still. The port is run once, the first time a loop is shown: 60 frames to the
+  // title, then fire pressed and 300 frames of play, to the middle of the first level.
   const Solo = (() => {
     const PASSES = 176 / 100 * 50;            // main-loop passes a second, measured on the port
     let snap = null;
@@ -146,16 +201,18 @@
       if (snap) return snap;
       return (snap = new Promise((res, rej) => {
         const play = HunterPlay.create({ M: ram.slice(), keep: {}, CPU: C64Cpu.CPU }), F = HunterPlay.FRAME;
-        let n = 0;
+        const keep = () => ({ M: play.M.slice(), colour: play.colour.slice(), vic: play.shown.vic.slice(), cia2: play.shown.cia2.slice() });
+        let n = 0, title = null;
         (function chunk() {
           try {
             const t = performance.now();
-            while (n < 350 && performance.now() - t < 12) {
-              if (n < 50) play.joy = n % 20 < 10 ? 0x0F : 0x1F; else { play.joy = 0x1F; play.M[0x40] = 3; }
+            while (n < 410 && performance.now() - t < 12) {
+              if (n < 60) play.joy = 0x1F; else if (n < 110) play.joy = n % 20 < 10 ? 0x0F : 0x1F; else { play.joy = 0x1F; play.M[0x40] = 3; }
               play.run(++n * F);
+              if (n === 60) title = keep();
             }
-            if (n < 350) { setTimeout(chunk, 0); return; }
-            res({ M: play.M.slice(), colour: play.colour.slice(), vic: play.shown.vic.slice(), cia2: play.shown.cia2.slice() });
+            if (n < 410) { setTimeout(chunk, 0); return; }
+            res({ play: keep(), title });
           } catch (e) { rej(e); }
         })();
       }));
@@ -178,32 +235,106 @@
       w.push([l2, 1, 0xD021, 0x0B], [l2, 1, 0xD011, 0x1B], [l2, 1, 0xD016, 0x18]);
       return C64.renderFrame({ lines: 312, cycles: 63, vic, cia2: S.cia2, writes: w, mem: M, colourMem: colour }).px;
     }
-    function runner(S, c) {
-      const M = S.M.slice(), colour = S.colour.slice();
-      const io = { read: a => (a >= 0xD800 && a < 0xDC00 ? colour[a - 0xD800] : a === 0xD012 ? 0x80 : 0), write(a, v) { if (a >= 0xD800 && a < 0xDC00) colour[a - 0xD800] = v & 15; }, irqByte: a => M[a] };
-      const P = HunterPort.create(M, io, {});
-      if (c.start) c.start(M);
+    function runner(snaps, c) {
+      const S = snaps[c.scene || 'play'];
+      let M, colour, P, E, t, k = -1;
+      const sid = new Uint8Array(32);
+      function begin() {
+        k++; t = 0;
+        M = S.M.slice(); colour = S.colour.slice();
+        E = { colour, sid, joy: 0x1F, toggle: false, flip: 0 };
+        const io = {
+          read(a) {
+            if (a >= 0xD800 && a < 0xDC00) return colour[a - 0xD800];
+            if (a === 0xD012) return 0xC0 | (noise() & 0x3F);
+            if (a === 0xD41B || a === 0xDC04 || a === 0xDC05) return noise();
+            if (a === 0xDC01) return E.toggle ? ((E.flip ^= 1) ? 0x1F : 0x0F) : E.joy;
+            return 0;
+          },
+          write(a, v) { if (a >= 0xD800 && a < 0xDC00) colour[a - 0xD800] = v & 15; else if (a >= 0xD400 && a < 0xD420) sid[a & 31] = v; },
+          irqByte: a => M[a],
+        };
+        P = HunterPort.create(M, io, { CPU: C64Cpu.CPU });
+        let cpu = null;
+        E.call = a => { if (!cpu) cpu = new C64Cpu.CPU(M, { port: { dir: 0x2F, data: 0x36 }, io }); cpu.sp = 0xFF; cpu.call(a, {}, { maxSteps: 100000 }); };
+        // a routine that waits in a loop runs to the next turn of the loop, where it reads the stick
+        E.step = () => { for (;;) { const r = E.gen.next(); if (r.done || (r.value && r.value.cp !== undefined)) return; } };
+        if (c.start) c.start(M, P, E, k);
+      }
+      begin();
       const on = c.on || [0, 0], ctx = c.ctx || [0, 0];
-      let t = 0;
       return {
-        pass() { t++; M[0x1E] = (M[0x1E] + 1) & 255; c.pass(P, M, t); },
+        sid,
+        pass() {
+          if ((c.cycle && t >= c.cycle) || (c.done && t > 4 && c.done(M))) begin();
+          t++;
+          if (!c.roll && (c.scene || 'play') === 'play') M[0x1E] = (M[0x1E] + 1) & 255;
+          c.pass(P, M, t, E);
+        },
         draw() {
+          if (c.scene === 'title') return { px: C64.renderFrame({ lines: 312, cycles: 63, vic: S.vic, cia2: S.cia2, writes: [], mem: M, colourMem: colour }).px };
           const all = frame(M, S, colour, [on[0] | ctx[0], on[1] | ctx[1]]);
           return { px: all, bright: c.on ? frame(M, S, colour, ctx) : null };
         },
       };
     }
-    async function mount(cv, ram) {
-      const c = CLIPS[cv.dataset.solo], [x0, y0, x1, y1] = c.crop, w = x1 - x0, h = y1 - y0, W = 384;
+    // the music: each voice's pitch, from its frequency registers, while its gate is on
+    const VOICE = [['#56B4E9', 0], ['#E69F00', 7], ['#009E73', 14]];
+    function roll(cv, r, c) {
+      const w = 320, h = 150, lo = 28, hi = 96, Y = n => h - 8 - (n - lo) / (hi - lo) * (h - 16);
       cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d'), hist = [];
+      let t0 = 0, done = 0;
+      (function tick(t) {
+        if (!cv.isConnected) return;
+        if (!t0) t0 = t;
+        const due = Math.floor((t - t0) / 1000 * c.rate);
+        for (; done < due; done++) {
+          r.pass();
+          hist.push(VOICE.map(([, o]) => {
+            const f = r.sid[o] | r.sid[o + 1] << 8;
+            if (!(r.sid[o + 4] & 1) || !f) return null;
+            return 69 + 12 * Math.log2(f * 985248 / 16777216 / 440);
+          }));
+          if (hist.length > w - 24) hist.shift();
+        }
+        ctx.fillStyle = '#16171a'; ctx.fillRect(0, 0, w, h);
+        ctx.font = '9px monospace'; ctx.fillStyle = '#6a6d74';
+        for (let n = 36; n <= hi; n += 12) {           // the Cs
+          ctx.fillRect(0, Y(n), w - 24, 1);
+          ctx.fillText('C' + (n / 12 - 1), 2, Y(n) - 2);
+        }
+        VOICE.forEach(([col], v) => {
+          ctx.fillStyle = col;
+          hist.forEach((s, x) => { if (s[v] !== null) ctx.fillRect(x, Y(s[v]) - 1.5 + v * 0.5, 1, 3); });
+          const last = hist.length ? hist[hist.length - 1][v] : null;
+          const y = last === null ? h - 10 - (2 - v) * 0 : Y(last);
+          ctx.fillRect(w - 22, Math.max(2, Math.min(h - 14, y - 6)), 14, 12);
+          ctx.fillStyle = '#000'; ctx.font = 'bold 10px monospace';
+          ctx.fillText(String(v + 1), w - 18, Math.max(2, Math.min(h - 14, y - 6)) + 10);
+          if (last === null) { ctx.fillStyle = '#16171a'; ctx.globalAlpha = .6; ctx.fillRect(w - 22, Math.max(2, Math.min(h - 14, y - 6)), 14, 12); ctx.globalAlpha = 1; }
+        });
+        requestAnimationFrame(tick);
+      })(performance.now());
+    }
+    async function mount(cv, ram) {
+      const c = CLIPS[cv.dataset.solo];
+      cv.width = 320; cv.height = 150;
       const ctx = cv.getContext('2d');
-      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, cv.width, cv.height);
       ctx.fillStyle = '#bbb'; ctx.font = '12px sans-serif'; ctx.fillText('Starting the game…', 10, 20);
       const S = await boot(ram);
       if (!cv.isConnected) return;
+      if (c.roll) { roll(cv, runner(S, c), c); return; }
+      const [x0, y0, x1, y1] = c.crop, w = x1 - x0, h = y1 - y0, W = 384;
+      cv.width = w; cv.height = h;
       if (c.change && !c.mask) {                 // what the routine changes over its first passes
         const t = runner(S, c), first = t.draw().px.slice(), m = new Uint8Array(first.length);
-        for (let i = 0; i < c.change; i++) { t.pass(); const p = t.draw().px; for (let k = 0; k < p.length; k++) if (p[k] !== first[k]) m[k] = 1; }
+        for (let i = 1; i <= c.change; i++) {
+          t.pass();
+          if (i % (c.maskEvery || 1)) continue;
+          const p = t.draw().px; for (let k = 0; k < p.length; k++) if (p[k] !== first[k]) m[k] = 1;
+        }
         c.mask = m;
       }
       const r = runner(S, c), img = ctx.createImageData(w, h);
@@ -211,7 +342,7 @@
       (function tick(t) {
         if (!cv.isConnected) return;
         if (!t0) t0 = t;
-        const due = Math.floor((t - t0) / 1000 * PASSES * (c.speed || 1));
+        const due = Math.floor((t - t0) / 1000 * (c.rate || PASSES) * (c.speed || 1));
         for (; done < due; done++) r.pass();
         const f = r.draw();
         for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -224,7 +355,7 @@
         requestAnimationFrame(tick);
       })(performance.now());
     }
-    return { mount };
+    return { mount, runner, boot };
   })();
   const ORDER = Object.keys(JOBS).concat(['other']);
   const JOBNAME = Object.assign({ other: 'Other' }, Object.fromEntries(Object.entries(JOBS).map(([k, v]) => [k, v[0]])));
