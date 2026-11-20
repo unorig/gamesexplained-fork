@@ -37,6 +37,11 @@
   #cm-detail p{font-size:14.5px;margin:0 0 10px}
   #cm-detail h4{font-size:11.5px;font-family:var(--fm);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);margin:12px 0 4px;font-weight:500}
   #cm-detail ul{list-style:none;margin:0;padding:0;font-family:var(--fm);font-size:13px}
+  .cm-pop{position:fixed;z-index:6;width:min(340px,90vw);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.18);padding:8px;pointer-events:none}
+  .cm-pop img,.cm-pop canvas,#cm-detail .clip{display:block;width:100%;height:auto;image-rendering:pixelated;border-radius:4px;background:#000}
+  .cm-pop p{font-size:13px;line-height:1.4;margin:6px 2px 0;color:var(--ink-soft)}
+  #cm-detail figure{margin:0 0 10px}
+  #cm-detail figcaption{font-size:12.5px;color:var(--ink-mute);margin-top:4px;line-height:1.4}
   .cm-tip{position:fixed;pointer-events:none;background:var(--chip);color:var(--chip-ink);font-family:var(--fm);font-size:12px;padding:5px 8px;border-radius:5px;z-index:5;max-width:280px}
 </style>
 <!-- tabs -->
@@ -58,7 +63,7 @@
 <section id="calls">
   <p class="fig">02 · Who calls whom</p>
   <h2 class="t">The wiring between the subroutines</h2>
-  <p class="lede">Each box is one subroutine, taller when it is longer, in a band for its job. Inside a band, the boxes run from the first reached to the last. Hover over a box to light up its connections, or click it to keep them lit and read what it does.</p>
+  <p class="lede">Each box is one subroutine, taller when it is longer, in a band for its job. Inside a band, the boxes run from the first reached to the last. Hover over a box to light up its connections, or click it to keep them lit and read what it does. A box marked ▶ shows that routine at work on its own: the game is held still and dimmed while only that routine runs.</p>
   <div class="cm-legend" id="cm-graph-legend"></div>
   <div class="cm-grid" style="margin-top:14px">
     <div class="plate" style="padding:8px"><svg id="cm-graph" class="cm-graph" role="img" aria-label="Call graph"></svg></div>
@@ -69,8 +74,13 @@
 </main>
 <footer style="margin:16px 0 0;padding:22px var(--gx) 0;border-top:1px solid #e0ded8;font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:12px;color:#80838a"><a href="https://github.com/gamesexplained/gamesexplained" style="color:#1f5fa8;text-decoration:none">GitHub</a> · <a href="https://discord.gg/3V9GWyRDWV" style="color:#1f5fa8;text-decoration:none">Discord</a><br>© Games Explained contributors. Write-ups, facts and symbol maps are available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" style="color:#1f5fa8;text-decoration:none">CC BY-SA 4.0</a>; code under <a href="https://opensource.org/licenses/MIT" style="color:#1f5fa8;text-decoration:none">MIT</a></footer>
 <div class="cm-tip" id="cm-tip" hidden></div>
+<div class="cm-pop" id="cm-pop" hidden></div>
 
 <script src="../../lib/c64.js"></script>
+<script src="../../lib/collide.js"></script>
+<script src="../../lib/cpu6502.js"></script>
+<script src="reference/hp-port.js"></script>
+<script src="reference/hp-play.js"></script>
 <script>
 (function () {
   // Which job each subroutine does: the one hand-made part of the map. Everything else is read
@@ -85,6 +95,129 @@
     hits: ['Hits, scores and strafing runs', 'hits_play hits_sky_crash sprite_slot_hi sprite_slot_lo plane_crash add_score resolve_hits strafing_runs start_run place_target hits_strafing run_slot_hi run_slot_lo target_hit show_target_hits run_result'],
     sound: ['Sound and music', 'start_music start_engine_sound engine_sound shot_sound hit_sound music_init music_play music_start music_irq music_stop music_reset music_silence tune2_start tune2_irq tune2_init tune2_tick'],
   };
+  // A loop for each routine whose work can be seen, drawn live: the Play tab's port of the game
+  // (reference/hp-port.js) is run to the middle of the first level and held still, and then only the
+  // routines named run, a pass at a time at the game's pace, on the game's own memory. The bands'
+  // sprites are set as game_irq ($13AB) would set them from the band images. Bright is what those
+  // routines change: the pixels that differ over the first passes (change), or the sprites in on
+  // (a mask of sprites for each band: sky, ground); ctx sprites are shown dimmed, for their place,
+  // and the other sprites are hidden. crop is the part of the screen shown, in renderFrame's pixels.
+  const run = g => { if (g && g.next) for (const _ of g); };
+  const TURN = [0, 1, 2, 1, 0, 0xFF, 0xFE, 0xFF];
+  // read_inputs ($1920) takes $33 from voice 3's noise and $36 from the raster line, both random
+  // enough; here a little generator stands in for them
+  let seed = 1;
+  const noise = () => (seed = (seed * 1103515245 + 12345) >>> 0) >>> 24;
+  const CLIPS = {
+    move_stripes: { crop: [40, 50, 342, 196], change: 64, pass: P => P.move_stripes(),
+      text: 'The ground never scrolls. Each pass move_stripes redraws the stripes a few bytes further down the ground characters, faster near the bottom, so the fields seem to roll towards the plane.' },
+    scroll_left: { crop: [40, 50, 342, 104], change: 512,
+      pass(P, M) { M[0x22] = 2; if (!(M[0x1E] & 7)) run(P.scroll_ground()); P.set_fine_scroll(M[0x23]); },
+      text: 'The plane banked hard one way. Each pixel of turn moves the fine scroll on; when it runs out, scroll_left shifts the three hill rows a whole character left and fills the new column at the right edge from the panorama.' },
+    plane_shadow: { crop: [104, 38, 280, 198], on: [0x01, 0x09],
+      pass(P, M, t) { M[0x37] = t % 320 < 160 ? 0x01 : 0xFF; M[0x22] = TURN[(t >> 5) & 7]; P.move_plane(); },
+      text: 'The plane climbs, dives and banks. plane_shadow picks one of five shadow sizes from the plane\'s height, and the bank picks the turned picture of each.' },
+    fire_shot: { crop: [128, 38, 256, 198], on: [0x02, 0x02], ctx: [0x01, 0x09], speed: 0.25,
+      start(M) { const d = 0xA0 - M[0x8061]; M[0x8061] += d; M[0x8091] = (M[0x8091] + d) & 255; },
+      pass(P, M) { if (!M[0x8670] && !(M[0x1E] & 7)) P.fire_shot(); P.move_shots(); P.sort_shot(); },
+      text: 'Slowed to a quarter of the game\'s speed. fire_shot starts a shot just above the plane (dimmed), and move_shots carries it up the screen, smaller as it goes, until it is freed. Only one shot is in the air at a time.' },
+    move_aircraft: { crop: [40, 38, 342, 120], on: [0xF0, 0], ctx: [0x01, 0], speed: 3,
+      start(M) { for (let i = 0; i < 4; i++) M[0x8530 + 16 * i] = 0; },
+      pass(P, M, t) { M[0x33] = t % 200 ? noise() | 1 : 0; M[0x36] = noise(); if (!(M[0x1E] & 7)) M[0x21] = (M[0x21] + 1) & 255; P.spawn_aircraft(); P.sort_aircraft(); },
+      text: 'Three times the game\'s speed. spawn_aircraft starts an enemy aircraft close by at one edge when the noise byte at $33 comes up 0 (here, every 200 passes); move_aircraft then drifts it left, right, up and down by its movement bits, turning now and then at random, while it shrinks into the distance and is freed.' },
+    plane_crash: { crop: [104, 38, 280, 198], on: [0x01, 0x09],
+      pass(P, M) { if (!M[0x3F] || M[0x3F] >= 0x9F) M[0x3F] = 1; run(P.plane_crash()); },
+      text: 'The crash: every other pass the plane and its shadow show the next explosion picture. In the game a life is then taken and play starts again.' },
+  };
+  // The game held still. The port is run once, the first time a loop is shown: 350 frames from the
+  // start, with fire pressed on the title.
+  const Solo = (() => {
+    const PASSES = 176 / 100 * 50;            // main-loop passes a second, measured on the port
+    let snap = null;
+    function boot(ram) {
+      if (snap) return snap;
+      return (snap = new Promise((res, rej) => {
+        const play = HunterPlay.create({ M: ram.slice(), keep: {}, CPU: C64Cpu.CPU }), F = HunterPlay.FRAME;
+        let n = 0;
+        (function chunk() {
+          try {
+            const t = performance.now();
+            while (n < 350 && performance.now() - t < 12) {
+              if (n < 50) play.joy = n % 20 < 10 ? 0x0F : 0x1F; else { play.joy = 0x1F; play.M[0x40] = 3; }
+              play.run(++n * F);
+            }
+            if (n < 350) { setTimeout(chunk, 0); return; }
+            res({ M: play.M.slice(), colour: play.colour.slice(), vic: play.shown.vic.slice(), cia2: play.shown.cia2.slice() });
+          } catch (e) { rej(e); }
+        })();
+      }));
+    }
+    const rgb = C64.PAL.map(h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)));
+    const SKIP = new Set([0x12, 0x19, 0x1A, 0x1E, 0x1F]);
+    // one frame as game_irq draws it: band 0 (the sky) from $8060 at the top, band 1 (the ground) from
+    // $8090 at its line, band 2 (the score row) at the next, sprites limited to the masks given
+    function frame(M, S, colour, en) {
+      const vic = S.vic.slice(), w = [];
+      const band = (src, from, line, ptr, mask) => {
+        const put = line < 0 ? (a, v) => { vic[a] = v; } : (a, v) => w.push([line, 1, 0xD000 + a, v]);
+        put(0x21, M[src + 0x21]);
+        for (let x = from; x < 0x2F; x++) if (!SKIP.has(x)) put(x, x === 0x15 ? M[src + x] & mask : M[src + x]);
+        for (let x = 0; x < 8; x++) if (line < 0) M[0x47F8 + x] = M[ptr + x]; else w.push([line, 1, 0x47F8 + x, M[ptr + x]]);
+      };
+      const l1 = M[0x8072], l2 = M[0x80A2];
+      band(0x8060, 0, -1, 0x8520, en[0]);
+      band(0x8090, 8, l1, 0x8528, en[1]);
+      w.push([l2, 1, 0xD021, 0x0B], [l2, 1, 0xD011, 0x1B], [l2, 1, 0xD016, 0x18]);
+      return C64.renderFrame({ lines: 312, cycles: 63, vic, cia2: S.cia2, writes: w, mem: M, colourMem: colour }).px;
+    }
+    function runner(S, c) {
+      const M = S.M.slice(), colour = S.colour.slice();
+      const io = { read: a => (a >= 0xD800 && a < 0xDC00 ? colour[a - 0xD800] : a === 0xD012 ? 0x80 : 0), write(a, v) { if (a >= 0xD800 && a < 0xDC00) colour[a - 0xD800] = v & 15; }, irqByte: a => M[a] };
+      const P = HunterPort.create(M, io, {});
+      if (c.start) c.start(M);
+      const on = c.on || [0, 0], ctx = c.ctx || [0, 0];
+      let t = 0;
+      return {
+        pass() { t++; M[0x1E] = (M[0x1E] + 1) & 255; c.pass(P, M, t); },
+        draw() {
+          const all = frame(M, S, colour, [on[0] | ctx[0], on[1] | ctx[1]]);
+          return { px: all, bright: c.on ? frame(M, S, colour, ctx) : null };
+        },
+      };
+    }
+    async function mount(cv, ram) {
+      const c = CLIPS[cv.dataset.solo], [x0, y0, x1, y1] = c.crop, w = x1 - x0, h = y1 - y0, W = 384;
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#bbb'; ctx.font = '12px sans-serif'; ctx.fillText('Starting the game…', 10, 20);
+      const S = await boot(ram);
+      if (!cv.isConnected) return;
+      if (c.change && !c.mask) {                 // what the routine changes over its first passes
+        const t = runner(S, c), first = t.draw().px.slice(), m = new Uint8Array(first.length);
+        for (let i = 0; i < c.change; i++) { t.pass(); const p = t.draw().px; for (let k = 0; k < p.length; k++) if (p[k] !== first[k]) m[k] = 1; }
+        c.mask = m;
+      }
+      const r = runner(S, c), img = ctx.createImageData(w, h);
+      let t0 = 0, done = 0;
+      (function tick(t) {
+        if (!cv.isConnected) return;
+        if (!t0) t0 = t;
+        const due = Math.floor((t - t0) / 1000 * PASSES * (c.speed || 1));
+        for (; done < due; done++) r.pass();
+        const f = r.draw();
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const k = (y + y0) * W + x + x0, o = (y * w + x) * 4, col = rgb[f.px[k]];
+          const on = c.mask ? c.mask[k] : f.px[k] !== f.bright[k];
+          for (let j = 0; j < 3; j++) img.data[o + j] = on ? col[j] : col[j] * 0.25 + 40;
+          img.data[o + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+        requestAnimationFrame(tick);
+      })(performance.now());
+    }
+    return { mount };
+  })();
   const ORDER = Object.keys(JOBS).concat(['other']);
   const JOBNAME = Object.assign({ other: 'Other' }, Object.fromEntries(Object.entries(JOBS).map(([k, v]) => [k, v[0]])));
   const jobOf = {}; for (const [k, v] of Object.entries(JOBS)) for (const n of v[1].split(' ')) jobOf[n] = k;
@@ -244,15 +377,27 @@
         el('text', { x: P.x + 8, y: P.y + 13, 'font-size': 9, 'letter-spacing': '.06em', fill: 'var(--ink-soft)', class: 'mono' }, g).textContent = JOBNAME[r.g].toUpperCase().slice(0, 26);
         const nm = el('text', { x: P.x + 8, y: P.y + 28, 'font-size': 11, 'font-weight': 500, fill: 'var(--ink)', class: 'mono' }, g); nm.textContent = r.n;
         if (r.n.length * 6.65 > P.w - 14) nm.textContent = r.n.slice(0, Math.floor((P.w - 14) / 6.65) - 1) + '…';
+        if (CLIPS[r.n]) el('text', { x: P.x + P.w - 8, y: P.y + 13, 'font-size': 10, 'text-anchor': 'end', fill: 'var(--ink)', class: 'mono' }, g).textContent = '▶';
         if (P.h >= 48) el('text', { x: P.x + 8, y: P.y + P.h - 7, 'font-size': 10, fill: 'var(--ink-mute)', class: 'mono' }, g).textContent = `${hex(r.a)} · ${r.size} bytes`;
         g.addEventListener('click', () => select(r.i, false));
         g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(r.i, false); } });
-        g.addEventListener('mouseenter', () => { if (cur === null) focusOn(r.i); });
-        g.addEventListener('mouseleave', () => { if (cur === null) focusOn(null); });
+        g.addEventListener('mouseenter', () => { if (cur === null) focusOn(r.i); showPop(r, g); });
+        g.addEventListener('mouseleave', () => { if (cur === null) focusOn(null); hidePop(); });
         return g;
       });
       focusOn(cur);
     }
+    const pop = $('cm-pop');
+    const clipHTML = (n, cls) => `<canvas class="${cls}" data-solo="${n}" role="img" aria-label="${esc(n)} at work, on its own"></canvas>`;
+    const mountClips = box => box.querySelectorAll('canvas[data-solo]').forEach(cv => Solo.mount(cv, M.ram).catch(e => { console.error(e); }));
+    function showPop(r, g) {
+      const c = CLIPS[r.n]; if (!c || cur === r.i) return;
+      pop.innerHTML = clipHTML(r.n, '') + `<p><b>${r.n}</b> · ${esc(c.text)}</p>`; pop.hidden = false; mountClips(pop);
+      const b = g.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+      let x = b.right + 10; if (x + w > innerWidth - 8) x = Math.max(8, b.left - w - 10);
+      pop.style.left = x + 'px'; pop.style.top = Math.max(8, Math.min(innerHeight - h - 8, b.top + b.height / 2 - h / 2)) + 'px';
+    }
+    function hidePop() { pop.hidden = true; pop.innerHTML = ''; }
     let cur = null;
     function focusOn(i) {
       const near = new Set(i === null ? [] : [i, ...calls[i].map(e => e.b), ...callers[i].map(e => e.a)]);
@@ -266,20 +411,22 @@
       if (i === null) {
         const big = R.slice().sort((a, b) => b.size - a.size).slice(0, 5), most = R.slice().sort((a, b) => callers[b.i].length - callers[a.i].length).slice(0, 5);
         D.innerHTML = `<p style="margin:0 0 8px"><b>${R.length} subroutines, ${EDGES.length} links.</b> Click a box to see what it does, what it calls and what calls it.</p>
+          <h4>Watch them work</h4><ul>${R.filter(r => CLIPS[r.n]).map(r => `<li><a href="#calls" data-i="${r.i}">▶ ${r.n}</a></li>`).join('')}</ul>
           <h4>Longest</h4><ul>${big.map(r => `<li><a href="#calls" data-i="${r.i}">${r.n}</a> <span style="color:var(--ink-mute)">${r.size}</span></li>`).join('')}</ul>
           <h4>Called from most places</h4><ul>${most.map(r => `<li><a href="#calls" data-i="${r.i}">${r.n}</a> <span style="color:var(--ink-mute)">${callers[r.i].length}</span></li>`).join('')}</ul>`;
       } else {
         const r = R[i], rd = [...reads[i]];
         D.innerHTML = `<span class="tag" style="border-color:${jcol(r.g)};background:${tint(r.g)}">${JOBNAME[r.g]}</span>
-          <h3>${r.n}</h3><p class="meta">${hex(r.a)}–${hex(r.e)} · ${r.size} bytes</p><p>${esc(firstSentences(r.c, 3))}</p>
+          <h3>${r.n}</h3><p class="meta">${hex(r.a)}–${hex(r.e)} · ${r.size} bytes</p>${CLIPS[r.n] ? `<figure>${clipHTML(r.n, 'clip')}<figcaption>${esc(CLIPS[r.n].text)}</figcaption></figure>` : ''}<p>${esc(firstSentences(r.c, 3))}</p>
           <h4>Calls</h4>${list(calls[i], 'b')}<h4>Called from</h4>${list(callers[i], 'a')}
           ${rd.length ? `<h4>Tables it reads</h4><ul>${rd.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
           <p style="margin:12px 0 0"><a href="source.html#${id4(r.a)}">Read it in the Source code tab</a></p>`;
       }
+      mountClips(D);
       D.querySelectorAll('a[data-i]').forEach(b => b.addEventListener('click', ev => { ev.preventDefault(); select(+b.dataset.i, true); }));
     }
     function select(i, scroll) {
-      cur = (cur === i && !scroll) ? null : i; focusOn(cur); detail(cur); markStrip(cur);
+      hidePop(); cur = (cur === i && !scroll) ? null : i; focusOn(cur); detail(cur); markStrip(cur);
       if (cur !== null && scroll) NODES[cur].scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && cur !== null) select(cur, false); });
